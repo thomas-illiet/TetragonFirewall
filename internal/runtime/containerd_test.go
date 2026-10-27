@@ -13,8 +13,10 @@ type fakeTasks struct {
 	err error
 }
 
+// TaskPID returns the configured fake task result.
 func (f fakeTasks) TaskPID(context.Context, string) (uint32, error) { return f.pid, f.err }
 
+// TestReadUnifiedCgroup verifies unified cgroup path extraction.
 func TestReadUnifiedCgroup(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "cgroup")
 	if err := os.WriteFile(path, []byte("0::/kubepods.slice/pod.scope\n"), 0o600); err != nil {
@@ -26,6 +28,7 @@ func TestReadUnifiedCgroup(t *testing.T) {
 	}
 }
 
+// TestCgroupPath verifies safe host cgroup path resolution.
 func TestCgroupPath(t *testing.T) {
 	root := t.TempDir()
 	hostProc := filepath.Join(root, "proc")
@@ -50,6 +53,7 @@ func TestCgroupPath(t *testing.T) {
 	}
 }
 
+// TestCgroupPathErrors verifies runtime, procfs, and path validation failures.
 func TestCgroupPathErrors(t *testing.T) {
 	t.Run("task", func(t *testing.T) {
 		runtime := &Containerd{tasks: fakeTasks{err: errors.New("missing task")}}
@@ -86,6 +90,7 @@ func TestCgroupPathErrors(t *testing.T) {
 	})
 }
 
+// TestReadUnifiedCgroupErrors verifies malformed and missing procfs inputs.
 func TestReadUnifiedCgroupErrors(t *testing.T) {
 	if _, err := readUnifiedCgroup(filepath.Join(t.TempDir(), "missing")); err == nil {
 		t.Fatal("expected open error")
@@ -99,6 +104,7 @@ func TestReadUnifiedCgroupErrors(t *testing.T) {
 	}
 }
 
+// TestHelpers verifies container ID abbreviation behavior.
 func TestHelpers(t *testing.T) {
 	if got := shortID("1234567890123456"); got != "123456789012" {
 		t.Fatalf("shortID=%q", got)

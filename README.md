@@ -155,6 +155,15 @@ dns:
 
 Every external destination must be an IPv4 CIDR. Ports are explicit and range from 1 to 65535. Port `0` is reserved internally for the loopback "all ports" rule.
 
+The agent CLI is built with Cobra and resolves settings through Viper. Command-line flags take precedence over environment variables, which take precedence over defaults. Every flag can be supplied as an uppercase `FIREWALL_` variable with hyphens replaced by underscores; for example, `--metrics-address` maps to `FIREWALL_METRICS_ADDRESS`. `NODE_NAME` remains supported for the Kubernetes Downward API, alongside `FIREWALL_NODE_NAME`.
+
+Logs use the standard library's structured `slog` package. They default to JSON at the `info` level. Use `--log-format=text` or `FIREWALL_LOG_FORMAT=text` for human-readable output, and select `debug`, `info`, `warn`, or `error` with `--log-level` or `FIREWALL_LOG_LEVEL`.
+
+```bash
+firewall-agent --help
+firewall-agent --log-level=debug --log-format=text
+```
+
 ## Audit and metrics
 
 `deploy/tetragon-audit.yaml` adds an observation-only `TracingPolicyNamespaced` for restricted Pods:

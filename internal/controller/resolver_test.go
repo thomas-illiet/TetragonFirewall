@@ -15,6 +15,7 @@ import (
 	"github.com/example/tetragon-firewall/internal/config"
 )
 
+// TestSelectedContainers verifies node, label, phase, and runtime filtering.
 func TestSelectedContainers(t *testing.T) {
 	client := fake.NewClientset(&corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "selected", Namespace: "demo", Labels: map[string]string{"restricted": "true"}},
@@ -30,6 +31,7 @@ func TestSelectedContainers(t *testing.T) {
 	}
 }
 
+// TestSelectedContainersFiltersIneligibleStatuses verifies status-level exclusions.
 func TestSelectedContainersFiltersIneligibleStatuses(t *testing.T) {
 	client := fake.NewClientset(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pending", Namespace: "demo", Labels: map[string]string{"restricted": "true"}}, Spec: corev1.PodSpec{NodeName: "node-a"}, Status: corev1.PodStatus{Phase: corev1.PodPending}},
@@ -50,6 +52,7 @@ func TestSelectedContainersFiltersIneligibleStatuses(t *testing.T) {
 	}
 }
 
+// TestSelectedContainersListError verifies Kubernetes list errors are returned.
 func TestSelectedContainersListError(t *testing.T) {
 	client := fake.NewClientset()
 	client.PrependReactor("list", "pods", func(ktesting.Action) (bool, kruntime.Object, error) {
@@ -61,6 +64,7 @@ func TestSelectedContainersListError(t *testing.T) {
 	}
 }
 
+// TestServiceAddresses verifies ClusterIP and ready EndpointSlice resolution.
 func TestServiceAddresses(t *testing.T) {
 	ready := true
 	client := fake.NewClientset(
@@ -74,6 +78,7 @@ func TestServiceAddresses(t *testing.T) {
 	}
 }
 
+// TestServiceAddressesIgnoresInvalidAndUnreadyEndpoints verifies endpoint filtering.
 func TestServiceAddressesIgnoresInvalidAndUnreadyEndpoints(t *testing.T) {
 	ready, notReady := true, false
 	client := fake.NewClientset(
@@ -89,6 +94,7 @@ func TestServiceAddressesIgnoresInvalidAndUnreadyEndpoints(t *testing.T) {
 	}
 }
 
+// TestServiceAddressErrors verifies Service and EndpointSlice lookup failures.
 func TestServiceAddressErrors(t *testing.T) {
 	t.Run("missing service", func(t *testing.T) {
 		_, err := NewResolver(fake.NewClientset(), "node-a").ServiceAddresses(context.Background(), "demo", "missing")

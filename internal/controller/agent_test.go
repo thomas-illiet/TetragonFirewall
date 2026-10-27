@@ -21,10 +21,12 @@ type fakeKubernetes struct {
 	err        error
 }
 
+// SelectedContainers returns the fake Kubernetes container selection.
 func (f *fakeKubernetes) SelectedContainers(context.Context, config.Selector) ([]string, error) {
 	return f.containers, f.err
 }
 
+// ServiceAddresses returns deterministic application and DNS service addresses.
 func (f *fakeKubernetes) ServiceAddresses(_ context.Context, namespace, name string) ([]netip.Addr, error) {
 	if f.err != nil {
 		return nil, f.err
@@ -37,6 +39,7 @@ type fakeRuntime struct {
 	err   error
 }
 
+// CgroupPath returns a fake cgroup path or the configured runtime error.
 func (f *fakeRuntime) CgroupPath(_ context.Context, id string) (string, error) {
 	if f.err != nil {
 		return "", f.err
@@ -53,10 +56,13 @@ type fakeFirewall struct {
 	applyError error
 }
 
+// Apply records the rules and mode supplied by the agent.
 func (f *fakeFirewall) Apply(rules []bpf.Rule, mode uint32) error {
 	f.rules, f.mode = rules, mode
 	return f.applyError
 }
+
+// Attach records one requested container attachment.
 func (f *fakeFirewall) Attach(id, path string) error {
 	if f.attached == nil {
 		f.attached = map[string]string{}
@@ -64,13 +70,20 @@ func (f *fakeFirewall) Attach(id, path string) error {
 	f.attached[id] = path
 	return nil
 }
+
+// ReconcileLinks records the final desired pinned-link set.
 func (f *fakeFirewall) ReconcileLinks(desired map[string]struct{}) error {
 	f.desired = desired
 	return nil
 }
-func (f *fakeFirewall) LinkKey(id string) string     { return "key-" + id }
+
+// LinkKey returns the deterministic fake link key for an identity.
+func (f *fakeFirewall) LinkKey(id string) string { return "key-" + id }
+
+// Counters returns the configured fake kernel counters.
 func (f *fakeFirewall) Counters() ([4]uint64, error) { return f.counters, nil }
 
+// TestAgentReconcileEnforcement verifies rule compilation and link attachment.
 func TestAgentReconcileEnforcement(t *testing.T) {
 	path := writeConfig(t, "enforce")
 	kube := &fakeKubernetes{
@@ -102,6 +115,7 @@ func TestAgentReconcileEnforcement(t *testing.T) {
 	assertRule(t, firewall.rules, "203.0.113.10/32", 6, 443)
 }
 
+// TestAgentKeepsDesiredLinkWhenRuntimeIsTemporarilyUnavailable verifies link retention during transient failures.
 func TestAgentKeepsDesiredLinkWhenRuntimeIsTemporarilyUnavailable(t *testing.T) {
 	path := writeConfig(t, "audit")
 	kube := &fakeKubernetes{containers: []string{"container-a"}, addresses: map[string][]netip.Addr{
@@ -121,6 +135,7 @@ func TestAgentKeepsDesiredLinkWhenRuntimeIsTemporarilyUnavailable(t *testing.T) 
 	}
 }
 
+// TestAgentRejectsInvalidConfigBeforeChangingPolicy verifies fail-safe reconciliation.
 func TestAgentRejectsInvalidConfigBeforeChangingPolicy(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yaml")
 	if err := os.WriteFile(path, []byte("apiVersion: invalid\n"), 0o600); err != nil {
@@ -136,6 +151,7 @@ func TestAgentRejectsInvalidConfigBeforeChangingPolicy(t *testing.T) {
 	}
 }
 
+// TestMetrics verifies Prometheus metrics derived from agent and kernel state.
 func TestMetrics(t *testing.T) {
 	firewall := &fakeFirewall{counters: [4]uint64{1, 2, 3, 4}}
 	agent := NewAgent("unused", &fakeKubernetes{}, &fakeRuntime{}, firewall, slog.Default())
@@ -155,6 +171,7 @@ func TestMetrics(t *testing.T) {
 	}
 }
 
+// writeConfig writes a complete test policy and returns its path.
 func writeConfig(t *testing.T, mode string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "config.yaml")
@@ -184,6 +201,7 @@ dns:
 	return path
 }
 
+// assertRule verifies that a compiled rule contains an expected destination tuple.
 func assertRule(t *testing.T, rules []bpf.Rule, prefix string, protocol uint8, port uint16) {
 	t.Helper()
 	for _, rule := range rules {

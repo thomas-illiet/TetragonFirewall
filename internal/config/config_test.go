@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// validConfig returns a complete valid policy for test mutation.
 func validConfig() Config {
 	return Config{
 		APIVersion: APIVersion,
@@ -17,6 +18,7 @@ func validConfig() Config {
 	}
 }
 
+// TestValidate verifies that a complete policy passes validation.
 func TestValidate(t *testing.T) {
 	cfg := validConfig()
 	if err := cfg.Validate(); err != nil {
@@ -24,6 +26,7 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// TestRejectOverlappingCIDRs verifies ambiguous nested prefixes are rejected.
 func TestRejectOverlappingCIDRs(t *testing.T) {
 	cfg := validConfig()
 	cfg.External = append(cfg.External, ExternalRule{CIDR: "203.0.113.0/24", Protocols: Protocols{UDP: []uint16{53}}})
@@ -32,6 +35,7 @@ func TestRejectOverlappingCIDRs(t *testing.T) {
 	}
 }
 
+// TestMergeDuplicateCIDR verifies exact duplicate prefixes are merged.
 func TestMergeDuplicateCIDR(t *testing.T) {
 	cfg := validConfig()
 	cfg.External = append(cfg.External, ExternalRule{CIDR: "203.0.113.10/32", Protocols: Protocols{TCP: []uint16{8443, 443}}})
@@ -47,6 +51,7 @@ func TestMergeDuplicateCIDR(t *testing.T) {
 	}
 }
 
+// TestValidationFailures covers each required policy invariant.
 func TestValidationFailures(t *testing.T) {
 	tests := map[string]func(*Config){
 		"api version":       func(c *Config) { c.APIVersion = "v1" },
@@ -76,6 +81,7 @@ func TestValidationFailures(t *testing.T) {
 	}
 }
 
+// TestLoadStrictYAML verifies unknown fields and missing files are rejected.
 func TestLoadStrictYAML(t *testing.T) {
 	dir := t.TempDir()
 	unknown := filepath.Join(dir, "unknown.yaml")
@@ -90,6 +96,7 @@ func TestLoadStrictYAML(t *testing.T) {
 	}
 }
 
+// TestExternalRulesProtocolsAndOrdering verifies normalization and stable ordering.
 func TestExternalRulesProtocolsAndOrdering(t *testing.T) {
 	cfg := validConfig()
 	cfg.External = []ExternalRule{
