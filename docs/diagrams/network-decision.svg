@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">Network decision flow</title>
+  <desc id="desc">A socket or packet event is classified by address family and protocol, matched through an IPv4 LPM trie and a protocol-port map, then allowed, audited, or denied.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z"/></marker>
+    <style>
+      .bg{fill:#f8fafc}.box{fill:#ffffff;stroke:#8793a5;stroke-width:1.5}.blue{fill:#dbeafe}.green{fill:#dcfce7}.orange{fill:#ffedd5}.red{fill:#fee2e2}.edge{fill:none;stroke:#8793a5;stroke-width:2;marker-end:url(#arrow)}text{font-family:Inter,Arial,sans-serif;fill:#172033}.h1{font-size:26px;font-weight:600}.h2{font-size:16px;font-weight:600}.body{font-size:14px}.small{font-size:12px;fill:#536176}.yes{font-size:12px;fill:#172033;font-weight:600}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="680"/>
+  <text class="h1" x="48" y="48">Network decision flow</text>
+  <text class="small" x="48" y="72">The same allowlist is evaluated at socket and packet hooks</text>
+
+  <rect class="box blue" x="55" y="150" width="200" height="96" rx="12"/>
+  <text class="h2" x="82" y="183">Hook event</text><text class="body" x="82" y="210">connect4 · sendmsg4</text><text class="body" x="82" y="232">or egress packet</text>
+  <path class="edge" d="M255 198 H330"/>
+
+  <polygon class="box" points="440,130 545,198 440,266 335,198"/>
+  <text class="h2" x="390" y="193">IPv4 TCP</text><text class="h2" x="397" y="214">or UDP?</text>
+  <text class="yes" x="560" y="185">YES</text><path class="edge" d="M545 198 H640"/>
+  <text class="yes" x="402" y="292">NO</text><path class="edge" d="M440 266 V300 H380 V490 H530 V530"/>
+
+  <rect class="box orange" x="640" y="150" width="215" height="96" rx="12"/>
+  <text class="h2" x="670" y="182">Longest-prefix lookup</text><text class="body" x="670" y="210">destination IPv4 CIDR</text><text class="small" x="670" y="232">result: rule group or miss</text>
+  <path class="edge" d="M855 198 H930"/>
+
+  <polygon class="box" points="1035,130 1140,198 1035,266 930,198"/>
+  <text class="h2" x="981" y="193">Group found?</text>
+  <text class="yes" x="1007" y="292">YES</text><path class="edge" d="M1035 266 V350 H860"/>
+  <text class="yes" x="1144" y="185">NO</text><path class="edge" d="M1140 198 H1170 V490 H530 V530"/>
+
+  <rect class="box orange" x="650" y="350" width="210" height="96" rx="12"/>
+  <text class="h2" x="680" y="382">Port lookup</text><text class="body" x="680" y="410">group + protocol + port</text><text class="small" x="680" y="432">fallback to wildcard port 0</text>
+
+  <polygon class="box" points="530,330 635,398 530,466 425,398"/>
+  <text class="h2" x="476" y="393">Rule found?</text>
+  <path class="edge" d="M650 398 H635"/>
+  <text class="yes" x="488" y="492">NO</text><path class="edge" d="M530 466 V530"/>
+  <text class="yes" x="370" y="386">YES</text><path class="edge" d="M425 398 H315"/>
+
+  <rect class="box green" x="75" y="350" width="240" height="96" rx="12"/>
+  <text class="h2" x="105" y="383">Allow</text><text class="body" x="105" y="410">increment allow counter</text><text class="small" x="105" y="432">return 1 to the kernel</text>
+
+  <rect class="box red" x="410" y="530" width="240" height="96" rx="12"/>
+  <text class="h2" x="440" y="563">Policy miss</text><text class="body" x="440" y="590">emit ring-buffer event</text><text class="small" x="440" y="612">increment deny counter</text>
+
+  <polygon class="box" points="810,510 915,578 810,646 705,578"/>
+  <text class="h2" x="765" y="573">Mode?</text>
+  <path class="edge" d="M650 578 H705"/>
+  <path class="edge" d="M440 350 Q440 320 530 330"/>
+  <text class="yes" x="745" y="492">AUDIT</text><path class="edge" d="M775 525 Q700 465 315 430"/>
+  <text class="yes" x="925" y="565">ENFORCE</text><path class="edge" d="M915 578 H975"/>
+
+  <rect class="box red" x="975" y="530" width="170" height="96" rx="12"/>
+  <text class="h2" x="1005" y="563">Deny</text><text class="body" x="1005" y="590">socket error or</text><text class="body" x="1005" y="612">packet drop</text>
+</svg>

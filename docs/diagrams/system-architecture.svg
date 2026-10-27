@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Tetragon Firewall system architecture</title>
+  <desc id="desc">Kubernetes and containerd inputs feed a node-local Go agent. The agent updates persistent eBPF maps and attaches three programs to selected container cgroups. Decisions produce logs and metrics while Tetragon provides complementary audit events.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"/></marker>
+    <style>
+      .bg{fill:#f8fafc}.card{fill:#ffffff;stroke:#8793a5;stroke-width:1.5}.blue{fill:#dbeafe}.green{fill:#dcfce7}.orange{fill:#ffedd5}.purple{fill:#f3e8ff}.red{fill:#fee2e2}
+      .edge{fill:none;stroke:#8793a5;stroke-width:2;marker-end:url(#arrow)}.dash{stroke-dasharray:7 6}text{font-family:Inter,Arial,sans-serif;fill:#172033}.h1{font-size:26px;font-weight:600}.h2{font-size:17px;font-weight:600}.body{font-size:14px}.small{font-size:12px;fill:#536176}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="760"/>
+  <text class="h1" x="48" y="48">Tetragon Firewall — node-local architecture</text>
+  <text class="small" x="48" y="72">Control plane inputs → reconciliation → persistent kernel datapath</text>
+
+  <rect class="card blue" x="50" y="120" width="240" height="118" rx="12"/>
+  <text class="h2" x="72" y="150">Kubernetes API</text>
+  <text class="body" x="72" y="180">Pods and labels</text><text class="body" x="72" y="202">Services and EndpointSlices</text><text class="small" x="72" y="224">Namespace-scoped read-only RBAC</text>
+
+  <rect class="card orange" x="50" y="275" width="240" height="100" rx="12"/>
+  <text class="h2" x="72" y="305">Projected ConfigMap</text>
+  <text class="body" x="72" y="334">Selector, mode, allowlist</text><text class="small" x="72" y="357">Strictly decoded every 5 seconds</text>
+
+  <rect class="card purple" x="50" y="412" width="240" height="118" rx="12"/>
+  <text class="h2" x="72" y="442">containerd + host procfs</text>
+  <text class="body" x="72" y="472">Container ID → task PID</text><text class="body" x="72" y="494">PID → cgroup v2 path</text><text class="small" x="72" y="516">Node-local runtime identity</text>
+
+  <rect class="card" x="390" y="195" width="310" height="270" rx="16"/>
+  <text class="h2" x="420" y="228">Go firewall agent</text>
+  <rect class="blue" x="420" y="252" width="250" height="46" rx="8"/><text class="body" x="440" y="281">Kubernetes resolver</text>
+  <rect class="orange" x="420" y="310" width="250" height="46" rx="8"/><text class="body" x="440" y="339">Policy compiler</text>
+  <rect class="purple" x="420" y="368" width="250" height="46" rx="8"/><text class="body" x="440" y="397">Cgroup link reconciler</text>
+  <text class="small" x="420" y="445">Last valid policy survives input failures</text>
+
+  <path class="edge" d="M290 179 H355 Q375 179 390 230"/>
+  <path class="edge" d="M290 325 H390"/>
+  <path class="edge" d="M290 471 H355 Q375 471 390 425"/>
+
+  <rect class="card green" x="805" y="105" width="330" height="158" rx="14"/>
+  <text class="h2" x="835" y="138">Pinned eBPF policy state</text>
+  <text class="body" x="835" y="170">Generation A/B: LPM CIDRs + port rules</text>
+  <text class="body" x="835" y="195">Active mode, per-CPU counters, ring buffer</text>
+  <text class="small" x="835" y="227">/sys/fs/bpf/tetragon-firewall</text>
+  <path class="edge" d="M700 270 H760 Q785 270 805 215"/>
+
+  <rect class="card green" x="805" y="305" width="330" height="210" rx="14"/>
+  <text class="h2" x="835" y="338">Selected container cgroups</text>
+  <rect class="card" x="835" y="360" width="270" height="38" rx="7"/><text class="body" x="852" y="385">cgroup/connect4</text>
+  <rect class="card" x="835" y="410" width="270" height="38" rx="7"/><text class="body" x="852" y="435">cgroup/sendmsg4</text>
+  <rect class="card" x="835" y="460" width="270" height="38" rx="7"/><text class="body" x="852" y="485">cgroup_skb/egress</text>
+  <path class="edge" d="M700 390 H805"/>
+
+  <rect class="card red" x="805" y="570" width="330" height="120" rx="14"/>
+  <text class="h2" x="835" y="603">Observability</text>
+  <text class="body" x="835" y="633">Structured decision logs + Prometheus</text>
+  <text class="body" x="835" y="657">Tetragon socket audit (complementary)</text>
+  <path class="edge" d="M970 515 V570"/>
+  <path class="edge dash" d="M700 435 Q750 435 790 600 H805"/>
+
+  <rect class="card" x="390" y="570" width="310" height="120" rx="14"/>
+  <text class="h2" x="420" y="603">Workload traffic</text>
+  <text class="body" x="420" y="633">Allow: Service 8080, DNS 53, external rules</text>
+  <text class="body" x="420" y="657">Default: audit or deny</text>
+  <path class="edge" d="M700 630 H750 Q775 630 805 490"/>
+</svg>

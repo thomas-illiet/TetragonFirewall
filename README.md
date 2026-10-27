@@ -22,6 +22,17 @@ The controller automatically adds these destinations to the allowlist:
 
 Service endpoints are required because `cgroup_skb` may observe traffic before or after DNAT, depending on the cluster datapath.
 
+## Documentation
+
+- [Architecture and data flow](docs/architecture.md)
+- [Security and privilege model](docs/security.md)
+- [Testing strategy](docs/testing.md)
+- [System architecture diagram](docs/diagrams/system-architecture.svg)
+- [Network decision diagram](docs/diagrams/network-decision.svg)
+- [Reconciliation lifecycle diagram](docs/diagrams/reconciliation-lifecycle.svg)
+
+Run `make docs` to validate that every SVG is well-formed and contains accessible title, description, and ARIA metadata.
+
 ## Requirements and minimum privileges
 
 - Linux nodes using containerd and cgroup v2;

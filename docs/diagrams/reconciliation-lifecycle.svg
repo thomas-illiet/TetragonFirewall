@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">Reconciliation and persistent enforcement lifecycle</title>
+  <desc id="desc">Every reconciliation validates input, resolves services, compiles an inactive map generation, switches it atomically, resolves container cgroups, attaches missing links, and removes stale links. Failures preserve the last valid policy.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z"/></marker>
+    <style>
+      .bg{fill:#f8fafc}.box{fill:#ffffff;stroke:#8793a5;stroke-width:1.5}.blue{fill:#dbeafe}.green{fill:#dcfce7}.orange{fill:#ffedd5}.purple{fill:#f3e8ff}.red{fill:#fee2e2}.edge{fill:none;stroke:#8793a5;stroke-width:2;marker-end:url(#arrow)}.fail{stroke-dasharray:7 6}text{font-family:Inter,Arial,sans-serif;fill:#172033}.h1{font-size:26px;font-weight:600}.h2{font-size:15px;font-weight:600}.body{font-size:13px}.small{font-size:12px;fill:#536176}
+    </style>
+  </defs>
+  <rect class="bg" width="1200" height="700"/>
+  <text class="h1" x="48" y="48">Reconciliation and persistence lifecycle</text>
+  <text class="small" x="48" y="72">A failure never partially activates a policy generation</text>
+
+  <rect class="box blue" x="50" y="125" width="180" height="82" rx="11"/><text class="h2" x="75" y="157">1 · Read config</text><text class="body" x="75" y="183">Strict YAML decode</text>
+  <rect class="box blue" x="275" y="125" width="180" height="82" rx="11"/><text class="h2" x="300" y="157">2 · Resolve state</text><text class="body" x="300" y="183">Pods, Services, endpoints</text>
+  <rect class="box orange" x="500" y="125" width="180" height="82" rx="11"/><text class="h2" x="525" y="157">3 · Compile rules</text><text class="body" x="525" y="183">CIDR groups + ports</text>
+  <rect class="box orange" x="725" y="125" width="180" height="82" rx="11"/><text class="h2" x="750" y="157">4 · Write inactive</text><text class="body" x="750" y="183">Generation A or B</text>
+  <rect class="box green" x="950" y="125" width="200" height="82" rx="11"/><text class="h2" x="975" y="157">5 · Atomic switch</text><text class="body" x="975" y="183">One active-config update</text>
+  <path class="edge" d="M230 166 H275"/><path class="edge" d="M455 166 H500"/><path class="edge" d="M680 166 H725"/><path class="edge" d="M905 166 H950"/>
+
+  <rect class="box purple" x="950" y="285" width="200" height="82" rx="11"/><text class="h2" x="975" y="317">6 · Select containers</text><text class="body" x="975" y="343">Desired keys from Pod status</text>
+  <rect class="box purple" x="725" y="285" width="180" height="82" rx="11"/><text class="h2" x="750" y="317">7 · Resolve cgroups</text><text class="body" x="750" y="343">containerd PID + procfs</text>
+  <rect class="box green" x="500" y="285" width="180" height="82" rx="11"/><text class="h2" x="525" y="317">8 · Attach missing</text><text class="body" x="525" y="343">Three pinned BPF links</text>
+  <rect class="box green" x="275" y="285" width="180" height="82" rx="11"/><text class="h2" x="300" y="317">9 · Remove stale</text><text class="body" x="300" y="343">Only unselected identities</text>
+  <rect class="box blue" x="50" y="285" width="180" height="82" rx="11"/><text class="h2" x="75" y="317">10 · Publish state</text><text class="body" x="75" y="343">Metrics and structured logs</text>
+  <path class="edge" d="M1050 207 V285"/><path class="edge" d="M950 326 H905"/><path class="edge" d="M725 326 H680"/><path class="edge" d="M500 326 H455"/><path class="edge" d="M275 326 H230"/>
+
+  <path class="edge" d="M140 367 V420 Q140 445 170 445 H1030 Q1050 445 1050 420 V367"/>
+  <text class="small" x="515" y="436">repeat every 5 seconds</text>
+
+  <rect class="box red" x="315" y="520" width="570" height="112" rx="14"/>
+  <text class="h2" x="345" y="552">Failure path: preserve enforcement</text>
+  <text class="body" x="345" y="580">Input, API, compilation, map, or runtime errors are logged and retried.</text>
+  <text class="body" x="345" y="604">The active generation and still-desired pinned links remain unchanged.</text>
+  <path class="edge fail" d="M365 207 V480 Q365 505 405 520"/>
+  <path class="edge fail" d="M815 207 V480 Q815 505 780 520"/>
+
+  <rect class="box" x="50" y="535" width="210" height="82" rx="11"/>
+  <text class="h2" x="75" y="567">Agent restart</text><text class="body" x="75" y="593">Pinned links stay active</text>
+  <path class="edge" d="M260 576 H315"/>
+  <rect class="box" x="940" y="535" width="210" height="82" rx="11"/>
+  <text class="h2" x="965" y="567">Agent recovery</text><text class="body" x="965" y="593">Reopen maps and links</text>
+  <path class="edge" d="M885 576 H940"/>
+</svg>

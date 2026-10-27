@@ -7,7 +7,7 @@ BPF_GENERATED := \
 	internal/bpf/firewall_bpfeb.go \
 	internal/bpf/firewall_bpfeb.o
 
-.PHONY: help tools generate clean-generated build test test-race coverage vet manifests test-all test-container image test-ebpf clean
+.PHONY: help tools generate clean-generated build test test-race coverage vet manifests docs test-all test-container image test-ebpf clean
 
 help: ## Show available targets.
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -37,7 +37,7 @@ coverage: generate ## Write a Go coverage profile to coverage.out.
 	go test -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out
 
-test-all: test test-race vet build manifests ## Run every portable validation.
+test-all: test test-race vet build manifests docs ## Run every portable validation.
 	bash -n scripts/*.sh
 
 test-container: ## Run the complete test suite in the Linux builder image.
@@ -48,6 +48,9 @@ vet: generate ## Run Go static analysis.
 
 manifests: generate ## Validate all Kubernetes YAML documents.
 	go run ./tools/validate-yaml deploy/firewall.yaml deploy/demo.yaml deploy/tetragon-audit.yaml
+
+docs: ## Validate documentation SVG syntax and accessibility metadata.
+	go run ./tools/validate-svg docs/diagrams/*.svg
 
 image: ## Build the container image, including eBPF generation in the builder.
 	docker build -t "$${IMAGE:-tetragon-firewall:dev}" .
