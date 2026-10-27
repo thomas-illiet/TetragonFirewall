@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Unit tests with race detector
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: Static and portable integration checks
+        run: make test-all
+      - name: Verify generated eBPF bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm
+          go generate ./internal/bpf
+          git diff --exit-code -- internal/bpf
+      - name: Build container image
+        run: docker build -t tetragon-firewall:ci .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out

@@ -1,0 +1,211 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tetragon-firewall
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: firewall-agent
+  namespace: tetragon-firewall
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tetragon-firewall-agent
+  namespace: demo
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tetragon-firewall-agent
+  namespace: demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tetragon-firewall-agent
+subjects:
+  - kind: ServiceAccount
+    name: firewall-agent
+    namespace: tetragon-firewall
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tetragon-firewall-dns-reader
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tetragon-firewall-dns-reader
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tetragon-firewall-dns-reader
+subjects:
+  - kind: ServiceAccount
+    name: firewall-agent
+    namespace: tetragon-firewall
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: firewall-policy
+  namespace: tetragon-firewall
+data:
+  config.yaml: |
+    apiVersion: firewall.example.io/v1alpha1
+    mode: audit
+    selector:
+      namespace: demo
+      matchLabels:
+        firewall.example.io/restricted: "true"
+    allowLoopback: true
+    external:
+      - cidr: 203.0.113.10/32
+        protocols:
+          tcp: [443]
+          udp: [123]
+      - cidr: 198.51.100.0/24
+        protocols:
+          tcp: [8443]
+    service:
+      namespace: demo
+      name: allowed-backend
+      protocol: tcp
+      port: 8080
+    dns:
+      namespace: kube-system
+      serviceName: kube-dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: firewall-agent
+  namespace: tetragon-firewall
+  labels:
+    app.kubernetes.io/name: firewall-agent
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: firewall-agent
+  ports:
+    - name: metrics
+      port: 2112
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: firewall-agent
+  namespace: tetragon-firewall
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: firewall-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: firewall-agent
+    spec:
+      serviceAccountName: firewall-agent
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: agent
+          image: ghcr.io/example/tetragon-firewall:dev
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=/etc/firewall/config.yaml
+            - --containerd-socket=/run/containerd/containerd.sock
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: false
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+              add: ["BPF", "NET_ADMIN"]
+            seccompProfile:
+              type: Unconfined
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          ports:
+            - name: metrics
+              containerPort: 2112
+          volumeMounts:
+            - name: config
+              mountPath: /etc/firewall
+              readOnly: true
+            - name: host-proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: cgroup
+              mountPath: /sys/fs/cgroup
+              readOnly: true
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+              mountPropagation: HostToContainer
+            - name: containerd
+              mountPath: /run/containerd/containerd.sock
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: firewall-policy
+        - name: host-proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: Directory
+        - name: containerd
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket

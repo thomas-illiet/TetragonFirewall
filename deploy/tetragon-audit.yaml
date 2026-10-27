@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicyNamespaced
+metadata:
+  name: restricted-workload-network-audit
+  namespace: demo
+spec:
+  podSelector:
+    matchLabels:
+      firewall.example.io/restricted: "true"
+  kprobes:
+    - call: security_socket_connect
+      syscall: false
+      message: restricted workload attempted a socket connection
+      args:
+        - index: 1
+          type: sockaddr
+      selectors:
+        - matchActions:
+            - action: Post
