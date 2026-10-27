@@ -1,3 +1,5 @@
 /bin/
 /coverage.out
 *.log
+/internal/bpf/firewall_bpf*.go
+/internal/bpf/firewall_bpf*.o

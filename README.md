@@ -52,7 +52,7 @@ The check uses and removes only `/sys/fs/bpf/tetragon-firewall-preflight`; it ne
 
 ## Build and test
 
-Generated eBPF bindings and objects are committed so the runtime image does not require clang or kernel headers.
+Generated eBPF bindings and objects are deliberately not committed. They are ignored by Git and built locally with `bpf2go`. The container builder installs clang/LLVM and generates them before compiling the agent; the final scratch image contains only the static agent binary.
 
 ```bash
 make test
@@ -66,17 +66,25 @@ Run the complete portable verification suite:
 make test-all
 ```
 
+On a workstation without a BPF-capable clang toolchain, run the same suite inside the Linux builder:
+
+```bash
+make test-container
+```
+
 Run the privileged Linux eBPF verifier after building the image:
 
 ```bash
 IMAGE=tetragon-firewall:dev ./scripts/test-ebpf.sh
 ```
 
-After changing `internal/bpf/firewall.c`, regenerate the embedded objects:
+Install Go, clang, and LLVM, then generate the embedded objects when working outside Docker:
 
 ```bash
 make generate
 ```
+
+Use `make clean-generated` to remove all generated bindings and object files. `make test`, `make vet`, `make build`, and `make test-all` invoke generation automatically.
 
 On macOS, generation requires a clang build with the BPF backend. A reproducible alternative is:
 
