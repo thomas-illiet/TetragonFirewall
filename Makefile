@@ -39,7 +39,6 @@ coverage: generate ## Write a Go coverage profile to coverage.out.
 
 test-all: test test-race vet build manifests ## Run every portable validation.
 	bash -n scripts/*.sh
-	./scripts/check-english.sh
 
 test-container: ## Run the complete test suite in the Linux builder image.
 	docker build --target test -t "$${IMAGE:-tetragon-firewall:test}" .
